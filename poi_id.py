@@ -9,6 +9,7 @@ from tester import dump_classifier_and_data
 import pandas as pd
 import matplotlib.pyplot
 from sklearn import tree
+from sklearn.cross_validation import StratifiedShuffleSplit
 ### Load the dictionary containing the dataset
 with open("final_project_dataset.pkl", "r") as data_file:
     data_dict = pickle.load(data_file)
@@ -109,7 +110,18 @@ labels, features = targetFeatureSplit(data)
 ### Try a varity of classifiers
 from sklearn import cross_validation
 from time import time
-features_train, features_test, labels_train, labels_test = cross_validation.train_test_split(features, labels, test_size=0.3, random_state=42)
+cv = StratifiedShuffleSplit(labels, 1000, random_state = 42)
+for train_idx, test_idx in cv: 
+        features_train = []
+        features_test  = []
+        labels_train   = []
+        labels_test    = []
+        for ii in train_idx:
+            features_train.append( features[ii] )
+            labels_train.append( labels[ii] )
+        for jj in test_idx:
+            features_test.append( features[jj] )
+            labels_test.append( labels[jj] )
 t0=time()
 from sklearn.feature_selection import SelectKBest, f_classif
 selector = SelectKBest(f_classif,k=10)
@@ -129,16 +141,24 @@ print {k:v for k,v in fea_imp.iteritems() if v>0.1}
 print("Decision tree algorithm time:",round(time()-t0, 3),"s")
 
 
-features_list3 = ["poi",'salary','to_messages', 'from_messages', 'from_this_person_to_poi', 
-                 'deferral_payments']
-
-data = featureFormat(my_dataset, features_list3)
+features_list3 = ["poi",'salary','loan_advances', 'from_this_person_to_poi', 'deferral_payments']
+features_list = ["poi", "fraction_from_poi_email", "fraction_to_poi_email"]
+data = featureFormat(my_dataset, features_list)
 labels, features = targetFeatureSplit(data)
 
 ### Try a varity of classifiers
-from sklearn import cross_validation
-from time import time
-features_train, features_test, labels_train, labels_test = cross_validation.train_test_split(features, labels, test_size=0.3, random_state=42)
+cv = StratifiedShuffleSplit(labels, 1000, random_state = 42)
+for train_idx, test_idx in cv: 
+        features_train = []
+        features_test  = []
+        labels_train   = []
+        labels_test    = []
+        for ii in train_idx:
+            features_train.append( features[ii] )
+            labels_train.append( labels[ii] )
+        for jj in test_idx:
+            features_test.append( features[jj] )
+            labels_test.append( labels[jj] )
 t0=time()
 clf = tree.DecisionTreeClassifier()
 clf= clf.fit(features_train,labels_train)
@@ -180,25 +200,10 @@ print("Precision: ",precision_score(labels_test, pred))
 print("Recall: ",recall_score(labels_test, pred))
 print("RandomForest time:",round(time()-t0, 3),"s")
 
-### Tune your classifier to achieve better than .3 precision and recall 
-
-labels, features = targetFeatureSplit(data)
-
-from sklearn.cross_validation import KFold
-kf=KFold(len(labels),10)
-for train_indices, test_indices in kf:
-    # make training and testing sets
-    features_train= [features[ii] for ii in train_indices]
-    features_test= [features[ii] for ii in test_indices]
-    labels_train=[labels[ii] for ii in train_indices]
-    labels_test=[labels[ii] for ii in test_indices]
-    
-
-
 from sklearn.model_selection import GridSearchCV
 parameters = {'max_depth':[1,2,3,4,5,6,7,8,9,10],'criterion':('gini','entropy'),'splitter':('best','random')}
 svr =tree.DecisionTreeClassifier()
-clf = GridSearchCV(svr, parameters)
+clf = GridSearchCV(svr, parameters, scoring = "f1")
 clf = clf.fit(features_train,labels_train)
 print clf.best_params_
 #from sklearn.model_selection import GridSearchCV
@@ -207,9 +212,22 @@ print clf.best_params_
 #clf = GridSearchCV(svr, parameters)
 #clf = clf.fit(features_train,labels_train)
 #print clf.best_params_
-
+data = featureFormat(my_dataset, features_list3)
+labels, features = targetFeatureSplit(data)
+cv = StratifiedShuffleSplit(labels, 1000, random_state = 42)
+for train_idx, test_idx in cv: 
+        features_train = []
+        features_test  = []
+        labels_train   = []
+        labels_test    = []
+        for ii in train_idx:
+            features_train.append( features[ii] )
+            labels_train.append( labels[ii] )
+        for jj in test_idx:
+            features_test.append( features[jj] )
+            labels_test.append( labels[jj] )
 t0=time()
-clf = tree.DecisionTreeClassifier(criterion='gini',max_depth=2,splitter='random')
+clf = tree.DecisionTreeClassifier(criterion='entropy',max_depth=8,splitter='best')
 #clf = tree.DecisionTreeClassifier()
 clf.fit(features_train,labels_train)
 pred= clf.predict(features_test)
@@ -222,11 +240,24 @@ print("Decision Tree algorithm 3.0 time:",round(time()-t0, 3),"s")
 ### that the version of poi_id.py that you submit can be run on its own and
 ### generates the necessary .pkl files for validating your results.
 
-features_list = ["poi", "fraction_from_poi_email", "fraction_to_poi_email"]
-data = featureFormat(my_dataset, features_list2)
+
+data = featureFormat(my_dataset, features_list)
+labels, features = targetFeatureSplit(data)
+cv = StratifiedShuffleSplit(labels, 1000, random_state = 42)
+for train_idx, test_idx in cv: 
+        features_train = []
+        features_test  = []
+        labels_train   = []
+        labels_test    = []
+        for ii in train_idx:
+            features_train.append( features[ii] )
+            labels_train.append( labels[ii] )
+        for jj in test_idx:
+            features_test.append( features[jj] )
+            labels_test.append( labels[jj] )
 labels, features = targetFeatureSplit(data)
 t0=time()
-clf = tree.DecisionTreeClassifier(criterion='entropy',max_depth=5,splitter='best')
+clf = tree.DecisionTreeClassifier(criterion='entropy',max_depth=9,splitter='best')
 clf.fit(features_train,labels_train)
 pred= clf.predict(features_test)
 print("Accuracy: ", accuracy_score(labels_test, pred))
